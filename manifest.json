@@ -1,0 +1,15 @@
+{
+  "name": "Packliste – Jugendfreizeit",
+  "short_name": "Packliste",
+  "description": "Interaktive Packliste für die Jugendfreizeit – abhaken, hinzufügen, entfernen.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f4fb",
+  "theme_color": "#5b6ee1",
+  "orientation": "portrait-primary",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

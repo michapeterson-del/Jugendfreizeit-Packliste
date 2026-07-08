@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>🎒 Packliste – Jugendfreizeit</title>
+<meta name="description" content="Interaktive Packliste für die Jugendfreizeit – abhaken, hinzufügen, entfernen." />
+<meta name="theme-color" content="#5b6ee1" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<div class="bg-blobs" aria-hidden="true"></div>
+
+<header class="app-header">
+  <div class="header-top">
+    <h1>🎒 Packliste <span>Jugendfreizeit</span></h1>
+    <button id="themeToggle" class="icon-btn" title="Hell/Dunkel umschalten" aria-label="Design umschalten">🌙</button>
+  </div>
+
+  <div id="countdown" class="countdown">
+    <span id="countdownText">📅 Reisedatum festlegen</span>
+    <input type="date" id="tripDate" aria-label="Reisedatum" />
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-bar">
+      <div id="progressFill" class="progress-fill"></div>
+    </div>
+    <div class="progress-label">
+      <span id="progressText">0 / 0 gepackt</span>
+      <span id="progressPercent">0%</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input id="searchInput" type="search" placeholder="🔍 Sachen durchsuchen…" aria-label="Suche" />
+    <div class="toolbar-buttons">
+      <button id="addCategoryBtn" class="btn btn-ghost">+ Kategorie</button>
+      <button id="shareBtn" class="btn btn-ghost" title="Als Text teilen">📤 Teilen</button>
+      <button id="exportBtn" class="btn btn-ghost" title="Sichern (JSON)">⬇️ Export</button>
+      <button id="importBtn" class="btn btn-ghost" title="Wiederherstellen (JSON)">⬆️ Import</button>
+      <input id="importFile" type="file" accept="application/json" hidden />
+      <button id="resetBtn" class="btn btn-danger-ghost" title="Alle Haken entfernen">↺ Zurücksetzen</button>
+    </div>
+  </div>
+</header>
+
+<main id="categories" class="categories"></main>
+
+<div id="confettiLayer" class="confetti-layer" aria-hidden="true"></div>
+
+<div id="celebration" class="celebration hidden">
+  <div class="celebration-card">
+    <div class="celebration-emoji">🎉</div>
+    <h2>Alles gepackt!</h2>
+    <p>Bereit für die Freizeit – lasst uns losfahren! 🚌</p>
+    <button id="celebrationClose" class="btn">Yes! 🙌</button>
+  </div>
+</div>
+
+<template id="itemTemplate">
+  <li class="item">
+    <label class="item-check">
+      <input type="checkbox" class="item-checkbox" />
+      <span class="checkmark"></span>
+    </label>
+    <span class="item-name"></span>
+    <div class="item-qty-controls">
+      <button class="qty-btn qty-minus" aria-label="Weniger">−</button>
+      <span class="qty-display"></span>
+      <button class="qty-btn qty-plus" aria-label="Mehr">+</button>
+    </div>
+    <button class="item-delete" title="Entfernen" aria-label="Entfernen">🗑</button>
+  </li>
+</template>
+
+<template id="categoryTemplate">
+  <section class="category">
+    <div class="category-header">
+      <div class="category-title">
+        <span class="category-emoji"></span>
+        <h2 class="category-name"></h2>
+      </div>
+      <div class="category-progress">
+        <div class="mini-progress"><div class="mini-progress-fill"></div></div>
+        <span class="mini-progress-text"></span>
+      </div>
+      <div class="category-actions">
+        <button class="cat-btn cat-check-all" title="Alle abhaken">✔️</button>
+        <button class="cat-btn cat-uncheck-all" title="Alle zurücksetzen">↺</button>
+        <button class="cat-btn cat-delete" title="Kategorie löschen">🗑</button>
+      </div>
+    </div>
+    <ul class="item-list"></ul>
+    <form class="add-item-form">
+      <input type="text" class="add-item-input" placeholder="+ Sache hinzufügen…" required />
+      <input type="number" class="add-item-qty" min="1" max="99" value="1" title="Menge" />
+      <button type="submit" class="btn btn-small">Hinzufügen</button>
+    </form>
+  </section>
+</template>
+
+<script src="js/app.js"></script>
+</body>
+</html>
