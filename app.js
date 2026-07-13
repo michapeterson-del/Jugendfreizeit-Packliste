@@ -7,6 +7,32 @@
 
   const uid = () => Math.random().toString(36).slice(2, 10);
 
+  // Extracts a packable quantity from labels like "Unterhosen (9 Stück)" or "Socken (9 Paar)"
+  // so items with more than one unit get one checkbox per unit instead of a single checkbox.
+  function parseQty(text) {
+    const m = text.match(/\((\d+)(?:\s*-\s*(\d+))?\s*(?:Stück|Paar)\)/i);
+    if (!m) return 1;
+    const n = parseInt(m[2] || m[1], 10);
+    return n > 1 ? n : 1;
+  }
+
+  function makeItem(text, custom) {
+    const qty = parseQty(text);
+    return qty > 1
+      ? { id: uid(), text, qty, units: Array(qty).fill(false), custom: !!custom }
+      : { id: uid(), text, checked: false, custom: !!custom };
+  }
+
+  function itemQty(item) {
+    return item.qty || 1;
+  }
+  function itemPacked(item) {
+    return item.qty ? item.units.filter(Boolean).length : item.checked ? 1 : 0;
+  }
+  function itemDone(item) {
+    return itemPacked(item) === itemQty(item);
+  }
+
   const DEFAULT_CATEGORIES = [
     {
       id: "hygiene",
@@ -68,13 +94,30 @@
     },
   ].map((cat) => ({
     ...cat,
-    items: cat.items.map((text) => ({ id: uid(), text, checked: false, custom: false })),
+    items: cat.items.map((text) => makeItem(text, false)),
   }));
+
+  // Upgrades items saved before quantities got individual checkboxes: a previously
+  // fully-checked item stays fully packed, everything else starts unpacked.
+  function migrateState(categories) {
+    categories.forEach((cat) => {
+      cat.items.forEach((item) => {
+        const qty = parseQty(item.text);
+        if (qty > 1 && !item.qty) {
+          const wasChecked = !!item.checked;
+          item.qty = qty;
+          item.units = Array(qty).fill(wasChecked);
+          delete item.checked;
+        }
+      });
+    });
+    return categories;
+  }
 
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) return JSON.parse(raw);
+      if (raw) return migrateState(JSON.parse(raw));
     } catch (e) {
       console.warn("Konnte gespeicherten Zustand nicht laden", e);
     }
@@ -95,6 +138,7 @@
   // ---------- DOM refs ----------
   const categoriesContainer = document.getElementById("categoriesContainer");
   const itemTemplate = document.getElementById("itemTemplate");
+  const multiItemTemplate = document.getElementById("multiItemTemplate");
   const categoryTemplate = document.getElementById("categoryTemplate");
   const overallPercent = document.getElementById("overallPercent");
   const overallCount = document.getElementById("overallCount");
@@ -138,10 +182,76 @@
 
   // ---------- Rendering ----------
   function matchesFilter(item) {
-    if (state.filter === "open" && item.checked) return false;
-    if (state.filter === "done" && !item.checked) return false;
+    const done = itemDone(item);
+    if (state.filter === "open" && done) return false;
+    if (state.filter === "done" && !done) return false;
     if (state.query && !item.text.toLowerCase().includes(state.query.toLowerCase())) return false;
     return true;
+  }
+
+  function buildSimpleItemNode(cat, item) {
+    const itemNode = itemTemplate.content.firstElementChild.cloneNode(true);
+    itemNode.dataset.itemId = item.id;
+    const checkbox = itemNode.querySelector(".item-checkbox");
+    checkbox.checked = item.checked;
+    checkbox.id = "chk-" + item.id;
+    itemNode.querySelector(".item-text").textContent = item.text;
+
+    checkbox.addEventListener("change", () => {
+      item.checked = checkbox.checked;
+      saveState();
+      renderProgressOnly();
+      checkAllDoneAndCelebrate();
+      if (state.filter !== "all") render();
+    });
+
+    itemNode.querySelector(".item-delete").addEventListener("click", () => {
+      cat.items = cat.items.filter((i) => i.id !== item.id);
+      saveState();
+      render();
+    });
+
+    return itemNode;
+  }
+
+  function buildMultiItemNode(cat, item) {
+    const node = multiItemTemplate.content.firstElementChild.cloneNode(true);
+    node.dataset.itemId = item.id;
+    node.querySelector(".item-text").textContent = item.text;
+    const countEl = node.querySelector(".item-multi-count");
+    const unitsEl = node.querySelector(".item-units");
+
+    function refreshCount() {
+      const packed = item.units.filter(Boolean).length;
+      countEl.textContent = `${packed}/${item.qty}`;
+      node.classList.toggle("all-packed", packed === item.qty);
+    }
+    refreshCount();
+
+    item.units.forEach((packed, idx) => {
+      const box = document.createElement("button");
+      box.type = "button";
+      box.className = "unit-box" + (packed ? " packed" : "");
+      box.title = `${item.text.replace(/\s*\(.*?\)\s*$/, "")} ${idx + 1} von ${item.qty}`;
+      box.addEventListener("click", () => {
+        item.units[idx] = !item.units[idx];
+        box.classList.toggle("packed", item.units[idx]);
+        refreshCount();
+        saveState();
+        renderProgressOnly();
+        checkAllDoneAndCelebrate();
+        if (state.filter !== "all") render();
+      });
+      unitsEl.appendChild(box);
+    });
+
+    node.querySelector(".item-delete").addEventListener("click", () => {
+      cat.items = cat.items.filter((i) => i.id !== item.id);
+      saveState();
+      render();
+    });
+
+    return node;
   }
 
   function render() {
@@ -150,8 +260,10 @@
     let totalChecked = 0;
 
     state.categories.forEach((cat) => {
-      totalItems += cat.items.length;
-      totalChecked += cat.items.filter((i) => i.checked).length;
+      const catQty = cat.items.reduce((s, i) => s + itemQty(i), 0);
+      const catPacked = cat.items.reduce((s, i) => s + itemPacked(i), 0);
+      totalItems += catQty;
+      totalChecked += catPacked;
 
       const visibleItems = cat.items.filter(matchesFilter);
       if ((state.query || state.filter !== "all") && visibleItems.length === 0) return;
@@ -163,8 +275,8 @@
       node.querySelector(".category-icon").textContent = cat.icon;
       node.querySelector(".category-title").textContent = cat.title;
 
-      const catChecked = cat.items.filter((i) => i.checked).length;
-      const catTotal = cat.items.length;
+      const catChecked = catPacked;
+      const catTotal = catQty;
       const catPct = catTotal ? Math.round((catChecked / catTotal) * 100) : 0;
       node.querySelector(".category-progress-fill").style.width = catPct + "%";
       node.querySelector(".category-progress-text").textContent = `${catChecked}/${catTotal}`;
@@ -177,29 +289,7 @@
 
       const list = node.querySelector(".item-list");
       visibleItems.forEach((item) => {
-        const itemNode = itemTemplate.content.firstElementChild.cloneNode(true);
-        itemNode.dataset.itemId = item.id;
-        const checkbox = itemNode.querySelector(".item-checkbox");
-        checkbox.checked = item.checked;
-        checkbox.id = "chk-" + item.id;
-        itemNode.querySelector(".item-text").textContent = item.text;
-
-        checkbox.addEventListener("change", () => {
-          item.checked = checkbox.checked;
-          saveState();
-          renderProgressOnly();
-          const label = itemNode.querySelector(".item-label");
-          label.classList.add("just-checked");
-          checkAllDoneAndCelebrate();
-          if (state.filter !== "all") render();
-        });
-
-        itemNode.querySelector(".item-delete").addEventListener("click", () => {
-          cat.items = cat.items.filter((i) => i.id !== item.id);
-          saveState();
-          render();
-        });
-
+        const itemNode = itemQty(item) > 1 ? buildMultiItemNode(cat, item) : buildSimpleItemNode(cat, item);
         list.appendChild(itemNode);
       });
 
@@ -209,7 +299,7 @@
         e.preventDefault();
         const text = input.value.trim();
         if (!text) return;
-        cat.items.push({ id: uid(), text, checked: false, custom: true });
+        cat.items.push(makeItem(text, true));
         input.value = "";
         saveState();
         render();
@@ -232,13 +322,15 @@
     let totalItems = 0;
     let totalChecked = 0;
     state.categories.forEach((cat) => {
-      totalItems += cat.items.length;
-      totalChecked += cat.items.filter((i) => i.checked).length;
+      const catQty = cat.items.reduce((s, i) => s + itemQty(i), 0);
+      const catPacked = cat.items.reduce((s, i) => s + itemPacked(i), 0);
+      totalItems += catQty;
+      totalChecked += catPacked;
 
       const node = categoriesContainer.querySelector(`[data-category-id="${cat.id}"]`);
       if (node) {
-        const catChecked = cat.items.filter((i) => i.checked).length;
-        const catTotal = cat.items.length;
+        const catChecked = catPacked;
+        const catTotal = catQty;
         const catPct = catTotal ? Math.round((catChecked / catTotal) * 100) : 0;
         node.querySelector(".category-progress-fill").style.width = catPct + "%";
         node.querySelector(".category-progress-text").textContent = `${catChecked}/${catTotal}`;
@@ -254,8 +346,8 @@
   }
 
   function checkAllDoneAndCelebrate() {
-    const totalItems = state.categories.reduce((s, c) => s + c.items.length, 0);
-    const totalChecked = state.categories.reduce((s, c) => s + c.items.filter((i) => i.checked).length, 0);
+    const totalItems = state.categories.reduce((s, c) => s + c.items.reduce((s2, i) => s2 + itemQty(i), 0), 0);
+    const totalChecked = state.categories.reduce((s, c) => s + c.items.reduce((s2, i) => s2 + itemPacked(i), 0), 0);
     if (totalItems > 0 && totalItems === totalChecked && !checkAllDoneAndCelebrate._fired) {
       checkAllDoneAndCelebrate._fired = true;
       fireConfetti();
@@ -364,7 +456,10 @@
     const lines = ["Packliste – Jugendfreizeit"];
     state.categories.forEach((cat) => {
       lines.push(`\n${cat.icon} ${cat.title}`);
-      cat.items.forEach((i) => lines.push(`${i.checked ? "[x]" : "[ ]"} ${i.text}`));
+      cat.items.forEach((i) => {
+        if (i.qty) lines.push(`[${itemPacked(i)}/${i.qty}] ${i.text}`);
+        else lines.push(`${i.checked ? "[x]" : "[ ]"} ${i.text}`);
+      });
     });
     const text = lines.join("\n");
     if (navigator.share) {
@@ -385,7 +480,12 @@
 
   document.getElementById("resetChecksBtn").addEventListener("click", () => {
     if (!confirm("Alle Häkchen zurücksetzen?")) return;
-    state.categories.forEach((cat) => cat.items.forEach((i) => (i.checked = false)));
+    state.categories.forEach((cat) =>
+      cat.items.forEach((i) => {
+        if (i.qty) i.units = Array(i.qty).fill(false);
+        else i.checked = false;
+      })
+    );
     checkAllDoneAndCelebrate._fired = false;
     saveState();
     render();
