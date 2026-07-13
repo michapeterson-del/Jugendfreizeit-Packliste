@@ -1,0 +1,14 @@
+{
+  "name": "Packliste – Jugendfreizeit",
+  "short_name": "Packliste",
+  "description": "Interaktive Packliste für die Jugendfreizeit mit Fortschritt, Countdown und Offline-Support.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f2fb",
+  "theme_color": "#6d5dfc",
+  "lang": "de",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Packliste – Jugendfreizeit</title>
+<meta name="description" content="Coole interaktive Packliste für die Jugendfreizeit mit Fortschrittsanzeige, Countdown und Offline-Support." />
+<meta name="theme-color" content="#6d5dfc" />
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-decor" aria-hidden="true">
+    <span class="blob blob-a"></span>
+    <span class="blob blob-b"></span>
+    <span class="blob blob-c"></span>
+  </div>
+
+  <header class="app-header">
+    <div class="header-top">
+      <h1><span class="logo">🎒</span> Packliste <span class="accent">Jugendfreizeit</span></h1>
+      <button id="themeToggle" class="icon-btn" title="Hell/Dunkel umschalten" aria-label="Design umschalten">🌙</button>
+    </div>
+
+    <div class="countdown-card" id="countdownCard">
+      <div class="countdown-info">
+        <label for="tripDate">🗓️ Start der Freizeit</label>
+        <input type="date" id="tripDate" />
+      </div>
+      <div class="countdown-number" id="countdownNumber">
+        <span id="countdownDays">–</span>
+        <small id="countdownLabel">Tage</small>
+      </div>
+    </div>
+
+    <div class="overall-progress">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="52"></circle>
+          <circle class="ring-fg" id="ringFg" cx="60" cy="60" r="52"></circle>
+        </svg>
+        <div class="ring-label">
+          <span id="overallPercent">0%</span>
+          <small>gepackt</small>
+        </div>
+      </div>
+      <div class="overall-stats">
+        <p id="overallCount">0 von 0 Sachen gepackt</p>
+        <p class="hype" id="hypeText">Los geht's, pack deinen Koffer! 🧳</p>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span aria-hidden="true">🔍</span>
+        <input type="search" id="searchInput" placeholder="Gegenstand suchen…" aria-label="Suche" />
+      </div>
+      <div class="filter-pills" id="filterPills">
+        <button class="pill active" data-filter="all">Alle</button>
+        <button class="pill" data-filter="open">Offen</button>
+        <button class="pill" data-filter="done">Gepackt ✓</button>
+      </div>
+    </div>
+
+    <section id="categoriesContainer" class="categories"></section>
+
+    <button id="addCategoryBtn" class="add-category-btn">+ Eigene Kategorie hinzufügen</button>
+
+    <section class="tips-panel">
+      <button class="tips-toggle" id="tipsToggle" aria-expanded="false">
+        💡 Packtipps anzeigen
+      </button>
+      <div class="tips-content" id="tipsContent" hidden>
+        <ul>
+          <li>Pack schwere Sachen unten in die Tasche, Leichtes und oft Gebrauchtes oben.</li>
+          <li>Kleidung in Packwürfeln oder Stoffbeuteln nach Kategorie sortieren spart Chaos.</li>
+          <li>Immer 1–2 Ersatz-Outfits mehr einplanen als du denkst.</li>
+          <li>Wichtige Dokumente (Ausweis, Impfpass) in einer Klarsichthülle griffbereit halten.</li>
+          <li>Ladekabel und Kopfhörer in einem kleinen Beutel bündeln, damit nichts verloren geht.</li>
+          <li>Namen auf Wertsachen und Kleidung schreiben – bei Gruppenfahrten geht sonst schnell was verloren.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <button id="printBtn" class="footer-btn">🖨️ Drucken / PDF</button>
+    <button id="shareBtn" class="footer-btn">📤 Teilen</button>
+    <button id="resetChecksBtn" class="footer-btn">↺ Häkchen zurücksetzen</button>
+    <button id="resetAllBtn" class="footer-btn danger">🗑️ Alles zurücksetzen</button>
+  </footer>
+
+  <div id="confettiCanvas-wrap" aria-hidden="true">
+    <canvas id="confettiCanvas"></canvas>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <template id="itemTemplate">
+    <li class="item">
+      <label class="item-label">
+        <input type="checkbox" class="item-checkbox" />
+        <span class="item-check-visual" aria-hidden="true"></span>
+        <span class="item-text"></span>
+      </label>
+      <button class="item-delete" title="Entfernen" aria-label="Entfernen">✕</button>
+    </li>
+  </template>
+
+  <template id="categoryTemplate">
+    <article class="category-card">
+      <header class="category-header">
+        <button class="category-collapse-btn">
+          <span class="category-icon"></span>
+          <h2 class="category-title"></h2>
+          <span class="category-chevron">▾</span>
+        </button>
+        <div class="category-progress-wrap">
+          <div class="category-progress-bar"><div class="category-progress-fill"></div></div>
+          <span class="category-progress-text"></span>
+        </div>
+      </header>
+      <ul class="item-list"></ul>
+      <form class="add-item-form">
+        <input type="text" class="add-item-input" placeholder="Eigenen Gegenstand hinzufügen…" />
+        <button type="submit">+</button>
+      </form>
+    </article>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
