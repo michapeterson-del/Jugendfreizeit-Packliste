@@ -16,8 +16,8 @@
     return n > 1 ? n : 1;
   }
 
-  function makeItem(text, custom) {
-    const qty = parseQty(text);
+  function makeItem(text, custom, forcedQty) {
+    const qty = forcedQty && forcedQty > 1 ? forcedQty : parseQty(text);
     return qty > 1
       ? { id: uid(), text, qty, units: Array(qty).fill(false), custom: !!custom }
       : { id: uid(), text, checked: false, custom: !!custom };
@@ -295,12 +295,15 @@
 
       const form = node.querySelector(".add-item-form");
       const input = node.querySelector(".add-item-input");
+      const qtyInput = node.querySelector(".add-item-qty");
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         const text = input.value.trim();
         if (!text) return;
-        cat.items.push(makeItem(text, true));
+        const qty = Math.max(1, Math.min(99, parseInt(qtyInput.value, 10) || 1));
+        cat.items.push(makeItem(text, true, qty));
         input.value = "";
+        qtyInput.value = "1";
         saveState();
         render();
       });
