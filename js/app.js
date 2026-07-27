@@ -10,7 +10,7 @@
       name: "Hygiene", emoji: "🧴",
       items: [
         "Haargel/Puder/Spray", "Zahnbürste", "Zahnpasta", "Haarkamm",
-        "Rasierer", "Duschgel / Duschseife", "Parfum", "Kontaktlinsen",
+        "Duschgel / Duschseife", "Parfum",
       ],
     },
     {
@@ -23,22 +23,16 @@
         "Leichte Jacke",
         { name: "Schicke Hosen Gottesdienst", qty: 3 },
         { name: "Schicke T-Shirts/ Polos", qty: 5 },
-        { name: "Hemden", qty: 3 },
         "Hausschuhe",
         { name: "Socken (Paar)", qty: 9 },
         { name: "Unterhosen", qty: 9 },
-      ],
-    },
-    {
-      name: "Snacks", emoji: "🍪",
-      items: [
-        "Sonnenblumenkerne", "Studentenfutter", "Kekse", "Spezi (optional)",
-        "Früchte (getrocknete und frisch)",
+        "Wanderhose",
+        { name: "Wandersocken", qty: 3 },
       ],
     },
     {
       name: "Schuhe", emoji: "👟",
-      items: ["Fußballschuhe", "Hallenschuhe", "Sneaker", "Sportschuhe", "Hausschuhe"],
+      items: ["Fußballschuhe", "Hallenschuhe", "Sneaker", "Sportschuhe", "Hausschuhe", "Wanderschuhe"],
     },
     {
       name: "Elektronik", emoji: "💻",
@@ -46,14 +40,14 @@
     },
     {
       name: "Unterlagen", emoji: "📚",
-      items: ["Bibel", "Collegeblock", "Stifte"],
+      items: ["Bibel", "Stifte"],
     },
     {
       name: "Sonstiges", emoji: "🎒",
       items: [
         "Sonnenbrille", "Rucksack", "Handtücher", "Bettzeug",
-        "Decke/Kissen (für die Fahrt)", "Taschenlampe", "Kopflampe", "Cap",
-        "Portemonnaie", "Ausweis/Führerschein", "Schlüssel", "Trinkflasche",
+        "Decke/Kissen (für die Fahrt)", "Cap",
+        "Portemonnaie", "Ausweis/Führerschein", "Trinkflasche",
         "Medikamente",
       ],
     },
