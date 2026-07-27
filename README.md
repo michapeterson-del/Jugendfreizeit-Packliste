@@ -1,8 +1,9 @@
-# 🎒 Packliste – Jugendfreizeit
+# 🎒 Packliste
 
-Interaktive Packlisten-App, erstellt aus der Vorlage `Packliste_Jugendfreizeit.docx`.
+Interaktive Packlisten-App zum Abhaken beim Kofferpacken.
 Reine HTML/CSS/JS-App, kein Build-Schritt nötig, läuft komplett im Browser
-(Daten werden lokal per `localStorage` gespeichert).
+(Daten werden lokal per `localStorage` gespeichert). Die Standard-Sachen und
+Kategorien lassen sich in der App beliebig anpassen, hinzufügen oder entfernen.
 
 ## Features
 

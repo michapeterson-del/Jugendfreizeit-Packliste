@@ -1,7 +1,7 @@
 {
-  "name": "Packliste – Jugendfreizeit",
+  "name": "Packliste",
   "short_name": "Packliste",
-  "description": "Interaktive Packliste für die Jugendfreizeit – abhaken, hinzufügen, entfernen.",
+  "description": "Interaktive Packliste – abhaken, hinzufügen, entfernen.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

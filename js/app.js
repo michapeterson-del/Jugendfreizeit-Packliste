@@ -127,10 +127,10 @@
     today.setHours(0, 0, 0, 0);
     const trip = new Date(val + "T00:00:00");
     const diffDays = Math.round((trip - today) / 86400000);
-    if (diffDays > 1) countdownText.textContent = `🚌 Noch ${diffDays} Tage bis zur Freizeit!`;
+    if (diffDays > 1) countdownText.textContent = `🚌 Noch ${diffDays} Tage bis zur Reise!`;
     else if (diffDays === 1) countdownText.textContent = "🚌 Morgen geht's los!";
     else if (diffDays === 0) countdownText.textContent = "🎉 Heute geht's los – viel Spaß!";
-    else countdownText.textContent = "✅ Die Freizeit hat schon begonnen";
+    else countdownText.textContent = "✅ Die Reise hat schon begonnen";
   }
   const savedTripDate = localStorage.getItem(TRIP_DATE_KEY);
   if (savedTripDate) tripDateInput.value = savedTripDate;
@@ -367,7 +367,7 @@
 
   // ---------- Share as text ----------
   document.getElementById("shareBtn").addEventListener("click", async () => {
-    let text = "🎒 Packliste – Jugendfreizeit\n\n";
+    let text = "🎒 Packliste\n\n";
     state.forEach((cat) => {
       text += `${cat.emoji || ""} ${cat.name}\n`;
       cat.items.forEach((item) => {
@@ -379,7 +379,7 @@
     });
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Packliste – Jugendfreizeit", text });
+        await navigator.share({ title: "Packliste", text });
         return;
       } catch (e) {
         /* user cancelled or share failed, fall back to clipboard */
