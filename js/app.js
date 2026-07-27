@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "packliste-jugendfreizeit-v1";
+  const STORAGE_KEY = "packliste-app-v2";
   const THEME_KEY = "packliste-theme";
   const TRIP_DATE_KEY = "packliste-trip-date";
 
@@ -73,13 +73,36 @@
     }));
   }
 
+  function sanitizeState(parsed) {
+    if (!Array.isArray(parsed)) return null;
+    const categories = parsed
+      .filter((cat) => cat && typeof cat === "object")
+      .map((cat) => {
+        const items = Array.isArray(cat.items)
+          ? cat.items
+              .filter((it) => it && typeof it === "object" && typeof it.name === "string" && it.name.trim())
+              .map((it) => {
+                const qty = Number.isFinite(it.qty) && it.qty > 0 ? Math.floor(it.qty) : 1;
+                const packed = Number.isFinite(it.packed) ? Math.max(0, Math.min(qty, Math.floor(it.packed))) : 0;
+                return { id: typeof it.id === "string" ? it.id : uid(), name: it.name, qty, packed };
+              })
+          : [];
+        return {
+          id: typeof cat.id === "string" ? cat.id : uid(),
+          name: typeof cat.name === "string" && cat.name.trim() ? cat.name : "Kategorie",
+          emoji: typeof cat.emoji === "string" && cat.emoji ? cat.emoji : "📦",
+          items,
+        };
+      });
+    return categories.length ? categories : null;
+  }
+
   function loadState() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return buildDefaultState();
-      const parsed = JSON.parse(raw);
-      if (!Array.isArray(parsed) || parsed.length === 0) return buildDefaultState();
-      return parsed;
+      const sanitized = sanitizeState(JSON.parse(raw));
+      return sanitized || buildDefaultState();
     } catch (e) {
       console.warn("Konnte gespeicherte Packliste nicht laden, starte mit Standardliste.", e);
       return buildDefaultState();
@@ -352,9 +375,9 @@
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const parsed = JSON.parse(reader.result);
-        if (!Array.isArray(parsed)) throw new Error("Ungültiges Format");
-        state = parsed;
+        const sanitized = sanitizeState(JSON.parse(reader.result));
+        if (!sanitized) throw new Error("Ungültiges Format");
+        state = sanitized;
         saveState();
         render();
       } catch (e) {
