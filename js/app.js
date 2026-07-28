@@ -4,6 +4,7 @@
   const STORAGE_KEY = "packliste-app-v2";
   const THEME_KEY = "packliste-theme";
   const TRIP_DATE_KEY = "packliste-trip-date";
+  const DESTINATION_KEY = "packliste-destination";
 
   const DEFAULT_DATA = [
     {
@@ -78,13 +79,19 @@
               .map((it) => {
                 const qty = Number.isFinite(it.qty) && it.qty > 0 ? Math.floor(it.qty) : 1;
                 const packed = Number.isFinite(it.packed) ? Math.max(0, Math.min(qty, Math.floor(it.packed))) : 0;
-                return { id: typeof it.id === "string" ? it.id : uid(), name: it.name, qty, packed };
+                const result = { id: typeof it.id === "string" ? it.id : uid(), name: it.name, qty, packed };
+                if (it.suggested) {
+                  result.suggested = true;
+                  if (typeof it.reason === "string") result.reason = it.reason;
+                }
+                return result;
               })
           : [];
         return {
           id: typeof cat.id === "string" ? cat.id : uid(),
           name: typeof cat.name === "string" && cat.name.trim() ? cat.name : "Kategorie",
           emoji: typeof cat.emoji === "string" && cat.emoji ? cat.emoji : "📦",
+          ...(cat.isWeather ? { isWeather: true } : {}),
           items,
         };
       });
@@ -157,6 +164,146 @@
     updateCountdown();
   });
 
+  // ---------- Weather ----------
+  const destinationInput = document.getElementById("destinationInput");
+  const weatherBtn = document.getElementById("weatherBtn");
+  const weatherResultEl = document.getElementById("weatherResult");
+
+  const savedDestination = localStorage.getItem(DESTINATION_KEY);
+  if (savedDestination) destinationInput.value = savedDestination;
+
+  function showWeatherResult(text, isError) {
+    weatherResultEl.textContent = text;
+    weatherResultEl.classList.remove("hidden");
+    weatherResultEl.classList.toggle("weather-result-error", !!isError);
+  }
+
+  function applyWeatherSuggestions({ tMax, tMin, rainProb, rainSum }) {
+    const suggestions = [];
+    if (rainProb >= 50 || rainSum > 0.5) {
+      suggestions.push({ name: "Regenjacke", reason: "Regen erwartet" });
+      suggestions.push({ name: "Wasserdichte Schuhe", reason: "Regen erwartet" });
+    }
+    if (tMin < 10) {
+      suggestions.push({ name: "Warme Jacke", reason: `Kalt (${Math.round(tMin)}°C)` });
+      suggestions.push({ name: "Mütze", reason: `Kalt (${Math.round(tMin)}°C)` });
+      suggestions.push({ name: "Handschuhe", reason: `Kalt (${Math.round(tMin)}°C)` });
+    }
+    if (tMax > 25) {
+      suggestions.push({ name: "Kurze Klamotten (Shorts/T-Shirts)", reason: `Warm (${Math.round(tMax)}°C)` });
+      suggestions.push({ name: "Sonnenhut", reason: `Warm (${Math.round(tMax)}°C)` });
+      suggestions.push({ name: "Sonnencreme", reason: `Warm (${Math.round(tMax)}°C)` });
+    }
+
+    let weatherCat = state.find((c) => c.isWeather);
+
+    if (suggestions.length === 0) {
+      if (weatherCat && weatherCat.items.length === 0) {
+        state = state.filter((c) => c !== weatherCat);
+      }
+      saveState();
+      render();
+      return;
+    }
+
+    if (!weatherCat) {
+      weatherCat = { id: uid(), name: "Wetter-Empfehlungen", emoji: "🌦️", isWeather: true, items: [] };
+      state.unshift(weatherCat);
+    }
+    // Refresh pending (not-yet-decided) suggestions, keep ones already accepted.
+    weatherCat.items = weatherCat.items.filter((it) => !it.suggested);
+    suggestions.forEach((s) => {
+      if (weatherCat.items.some((it) => it.name === s.name)) return;
+      weatherCat.items.push({ id: uid(), name: s.name, qty: 1, packed: 0, suggested: true, reason: s.reason });
+    });
+
+    saveState();
+    render();
+  }
+
+  async function fetchWeatherSuggestions() {
+    const destination = destinationInput.value.trim();
+    const date = tripDateInput.value;
+
+    if (!destination) {
+      showWeatherResult("Bitte einen Zielort eingeben.", true);
+      return;
+    }
+    if (!date) {
+      showWeatherResult("Bitte zuerst ein Reisedatum eingeben.", true);
+      return;
+    }
+
+    localStorage.setItem(DESTINATION_KEY, destination);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date + "T00:00:00");
+    const diffDays = Math.round((target - today) / 86400000);
+
+    if (diffDays < 0) {
+      showWeatherResult("Das Reisedatum liegt in der Vergangenheit.", true);
+      return;
+    }
+    if (diffDays > 16) {
+      showWeatherResult(
+        `Die Wettervorhersage ist erst ca. 16 Tage vor der Reise verfügbar (noch ${diffDays} Tage). Bitte näher am Reisedatum nochmal abrufen.`,
+        true
+      );
+      return;
+    }
+
+    weatherBtn.disabled = true;
+    const originalLabel = weatherBtn.textContent;
+    weatherBtn.textContent = "⏳ Lädt…";
+
+    try {
+      const geoRes = await fetch(
+        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(destination)}&count=1&language=de&format=json`
+      );
+      if (!geoRes.ok) throw new Error("geo");
+      const geoData = await geoRes.json();
+      const place = geoData.results && geoData.results[0];
+      if (!place) {
+        showWeatherResult(`Ort "${destination}" wurde nicht gefunden.`, true);
+        return;
+      }
+
+      const forecastRes = await fetch(
+        `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}` +
+          `&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum` +
+          `&timezone=auto&start_date=${date}&end_date=${date}`
+      );
+      if (!forecastRes.ok) throw new Error("forecast");
+      const forecastData = await forecastRes.json();
+      const daily = forecastData.daily;
+      if (!daily || !Array.isArray(daily.time) || daily.time.length === 0) {
+        showWeatherResult("Für dieses Datum liegt noch keine Vorhersage vor.", true);
+        return;
+      }
+
+      const tMax = daily.temperature_2m_max[0];
+      const tMin = daily.temperature_2m_min[0];
+      const rainProb = Array.isArray(daily.precipitation_probability_max) ? daily.precipitation_probability_max[0] || 0 : 0;
+      const rainSum = Array.isArray(daily.precipitation_sum) ? daily.precipitation_sum[0] || 0 : 0;
+
+      const placeLabel = [place.name, place.country].filter(Boolean).join(", ");
+      showWeatherResult(
+        `📍 ${placeLabel}: ${Math.round(tMin)}–${Math.round(tMax)}°C, Regenwahrscheinlichkeit ${Math.round(rainProb)}%`,
+        false
+      );
+
+      applyWeatherSuggestions({ tMax, tMin, rainProb, rainSum });
+    } catch (e) {
+      showWeatherResult("Wetterdaten konnten nicht geladen werden. Bitte später erneut versuchen.", true);
+    } finally {
+      weatherBtn.disabled = false;
+      weatherBtn.textContent = originalLabel;
+    }
+  }
+
+  weatherBtn.addEventListener("click", fetchWeatherSuggestions);
+
   // ---------- Rendering ----------
   const categoriesEl = document.getElementById("categories");
   const categoryTemplate = document.getElementById("categoryTemplate");
@@ -175,6 +322,7 @@
   function categoryTotals(cat) {
     return cat.items.reduce(
       (acc, it) => {
+        if (it.suggested) return acc;
         const { total, packed } = itemTotals(it);
         acc.total += total;
         acc.packed += packed;
@@ -229,10 +377,25 @@
         checkbox.checked = isPacked;
         li.querySelector(".item-name").textContent = item.name;
         li.querySelector(".qty-display").textContent = `${packed}/${total}`;
+        if (item.reason) li.querySelector(".item-reason").textContent = `💡 ${item.reason}`;
 
         const matches = !query || item.name.toLowerCase().includes(query);
         if (!matches) li.classList.add("hidden-by-search");
         else visibleCount++;
+
+        if (item.suggested) {
+          li.classList.add("suggested");
+          li.querySelector(".suggest-accept").addEventListener("click", () => {
+            item.suggested = false;
+            saveState();
+            render();
+          });
+          li.querySelector(".suggest-decline").addEventListener("click", () => {
+            cat.items = cat.items.filter((i) => i.id !== item.id);
+            saveState();
+            render();
+          });
+        }
 
         checkbox.addEventListener("change", () => {
           item.packed = checkbox.checked ? item.qty : 0;
@@ -272,13 +435,13 @@
       node.querySelector(".mini-progress-text").textContent = `${pct}%`;
 
       node.querySelector(".cat-check-all").addEventListener("click", () => {
-        cat.items.forEach((i) => (i.packed = i.qty));
+        cat.items.forEach((i) => { if (!i.suggested) i.packed = i.qty; });
         saveState();
         render();
         maybeCelebrate();
       });
       node.querySelector(".cat-uncheck-all").addEventListener("click", () => {
-        cat.items.forEach((i) => (i.packed = 0));
+        cat.items.forEach((i) => { if (!i.suggested) i.packed = 0; });
         saveState();
         render();
       });
@@ -386,8 +549,10 @@
   document.getElementById("shareBtn").addEventListener("click", async () => {
     let text = "🎒 Packliste\n\n";
     state.forEach((cat) => {
+      const confirmedItems = cat.items.filter((item) => !item.suggested);
+      if (!confirmedItems.length) return;
       text += `${cat.emoji || ""} ${cat.name}\n`;
-      cat.items.forEach((item) => {
+      confirmedItems.forEach((item) => {
         const box = item.packed >= item.qty ? "☑" : "☐";
         const qtyLabel = item.qty > 1 ? ` (${item.packed}/${item.qty})` : "";
         text += `${box} ${item.name}${qtyLabel}\n`;

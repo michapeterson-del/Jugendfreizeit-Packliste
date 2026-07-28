@@ -26,6 +26,14 @@
     <input type="date" id="tripDate" aria-label="Reisedatum" />
   </div>
 
+  <div id="tripSetup" class="trip-setup">
+    <div class="trip-setup-row">
+      <input type="text" id="destinationInput" placeholder="🌍 Zielort (z. B. Berlin)" aria-label="Zielort" />
+      <button id="weatherBtn" class="btn btn-ghost">🌦️ Wetter abrufen</button>
+    </div>
+    <div id="weatherResult" class="weather-result hidden"></div>
+  </div>
+
   <div class="progress-wrap">
     <div class="progress-bar">
       <div id="progressFill" class="progress-fill"></div>
@@ -68,11 +76,18 @@
       <input type="checkbox" class="item-checkbox" />
       <span class="checkmark"></span>
     </label>
-    <span class="item-name"></span>
+    <span class="item-text">
+      <span class="item-name"></span>
+      <span class="item-reason"></span>
+    </span>
     <div class="item-qty-controls">
       <button class="qty-btn qty-minus" aria-label="Weniger">−</button>
       <span class="qty-display"></span>
       <button class="qty-btn qty-plus" aria-label="Mehr">+</button>
+    </div>
+    <div class="item-suggested-actions">
+      <button class="suggest-accept" type="button">✓ Übernehmen</button>
+      <button class="suggest-decline" type="button">✕ Ablehnen</button>
     </div>
     <button class="item-delete" title="Entfernen" aria-label="Entfernen">🗑</button>
   </li>
