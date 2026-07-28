@@ -95,7 +95,6 @@
           id: typeof cat.id === "string" ? cat.id : uid(),
           name: typeof cat.name === "string" && cat.name.trim() ? cat.name : "Kategorie",
           emoji: typeof cat.emoji === "string" && cat.emoji ? cat.emoji : "📦",
-          ...(cat.isWeather ? { isWeather: true } : {}),
           items,
         };
       });
@@ -185,40 +184,33 @@
   function applyWeatherSuggestions({ tMax, tMin, rainProb, rainSum }) {
     const suggestions = [];
     if (rainProb >= 50 || rainSum > 0.5) {
-      suggestions.push({ name: "Regenjacke", reason: "Regen erwartet" });
-      suggestions.push({ name: "Wasserdichte Schuhe", reason: "Regen erwartet" });
+      suggestions.push({ name: "Regenjacke", reason: "Regen erwartet", category: "Kleidung" });
+      suggestions.push({ name: "Wasserdichte Schuhe", reason: "Regen erwartet", category: "Schuhe" });
     }
     if (tMin < 10) {
-      suggestions.push({ name: "Warme Jacke", reason: `Kalt (${Math.round(tMin)}°C)` });
-      suggestions.push({ name: "Mütze", reason: `Kalt (${Math.round(tMin)}°C)` });
-      suggestions.push({ name: "Handschuhe", reason: `Kalt (${Math.round(tMin)}°C)` });
+      suggestions.push({ name: "Warme Jacke", reason: `Kalt (${Math.round(tMin)}°C)`, category: "Kleidung" });
+      suggestions.push({ name: "Mütze", reason: `Kalt (${Math.round(tMin)}°C)`, category: "Kleidung" });
+      suggestions.push({ name: "Handschuhe", reason: `Kalt (${Math.round(tMin)}°C)`, category: "Kleidung" });
     }
     if (tMax > 25) {
-      suggestions.push({ name: "Kurze Klamotten (Shorts/T-Shirts)", reason: `Warm (${Math.round(tMax)}°C)` });
-      suggestions.push({ name: "Sonnenhut", reason: `Warm (${Math.round(tMax)}°C)` });
-      suggestions.push({ name: "Sonnencreme", reason: `Warm (${Math.round(tMax)}°C)` });
+      suggestions.push({ name: "Kurze Klamotten (Shorts/T-Shirts)", reason: `Warm (${Math.round(tMax)}°C)`, category: "Kleidung" });
+      suggestions.push({ name: "Sonnenhut", reason: `Warm (${Math.round(tMax)}°C)`, category: "Sonstiges" });
+      suggestions.push({ name: "Sonnencreme", reason: `Warm (${Math.round(tMax)}°C)`, category: "Hygiene" });
     }
 
-    let weatherCat = state.find((c) => c.isWeather);
+    // Clear previously pending (not-yet-decided) suggestions everywhere; keep ones already accepted.
+    state.forEach((cat) => {
+      cat.items = cat.items.filter((it) => !it.suggested);
+    });
 
-    if (suggestions.length === 0) {
-      if (weatherCat && weatherCat.items.length === 0) {
-        state = state.filter((c) => c !== weatherCat);
-      }
-      saveState();
-      render();
-      return;
-    }
-
-    if (!weatherCat) {
-      weatherCat = { id: uid(), name: "Wetter-Empfehlungen", emoji: "🌦️", isWeather: true, items: [] };
-      state.unshift(weatherCat);
-    }
-    // Refresh pending (not-yet-decided) suggestions, keep ones already accepted.
-    weatherCat.items = weatherCat.items.filter((it) => !it.suggested);
     suggestions.forEach((s) => {
-      if (weatherCat.items.some((it) => it.name === s.name)) return;
-      weatherCat.items.push({ id: uid(), name: s.name, qty: 1, packed: 0, suggested: true, reason: s.reason });
+      let cat = state.find((c) => c.name.toLowerCase() === s.category.toLowerCase());
+      if (!cat) {
+        cat = { id: uid(), name: s.category, emoji: "📦", items: [] };
+        state.push(cat);
+      }
+      if (cat.items.some((it) => it.name === s.name)) return;
+      cat.items.push({ id: uid(), name: s.name, qty: 1, packed: 0, suggested: true, reason: s.reason });
     });
 
     saveState();
