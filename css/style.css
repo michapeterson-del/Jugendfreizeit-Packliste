@@ -170,6 +170,18 @@ body {
   font-size: 0.9rem;
 }
 
+#durationInput {
+  width: 90px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
 .weather-result {
   margin-top: 10px;
   font-size: 0.88rem;
@@ -531,9 +543,40 @@ body {
   color: var(--text-muted);
   min-width: 34px;
   text-align: center;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-family: inherit;
+}
+.qty-display:hover {
+  background: var(--border);
+  color: var(--text);
 }
 
 .item[data-qty="1"] .item-qty-controls { display: none; }
+
+.perday-toggle {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 4px 9px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.perday-toggle:hover { background: var(--border); color: var(--text); }
+.perday-toggle.perday-active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.item.suggested .perday-toggle { display: none; }
 
 .item-delete {
   background: transparent;

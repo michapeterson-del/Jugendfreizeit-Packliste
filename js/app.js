@@ -5,6 +5,7 @@
   const THEME_KEY = "packliste-theme";
   const TRIP_DATE_KEY = "packliste-trip-date";
   const DESTINATION_KEY = "packliste-destination";
+  const DURATION_KEY = "packliste-trip-days";
 
   const DEFAULT_DATA = [
     {
@@ -17,7 +18,7 @@
     {
       name: "Kleidung", emoji: "👕",
       items: [
-        { name: "Freizeit-T-Shirts", qty: 6 },
+        { name: "Freizeit-T-Shirts", qty: 6, perDay: 1 },
         "Freizeithosen (Jeans, Cargohose)",
         { name: "Sport-T-Shirt", qty: 5 },
         { name: "Sporthose", qty: 3 },
@@ -25,8 +26,8 @@
         { name: "Schicke Hosen Gottesdienst", qty: 3 },
         { name: "Schicke T-Shirts/ Polos", qty: 5 },
         "Hausschuhe",
-        { name: "Socken (Paar)", qty: 9 },
-        { name: "Unterhosen", qty: 9 },
+        { name: "Socken (Paar)", qty: 9, perDay: 1 },
+        { name: "Unterhosen", qty: 9, perDay: 1 },
         "Wanderhose",
         { name: "Wandersocken", qty: 3 },
       ],
@@ -63,7 +64,9 @@
       emoji: cat.emoji,
       items: cat.items.map((it) => {
         const obj = typeof it === "string" ? { name: it, qty: 1 } : it;
-        return { id: uid(), name: obj.name, qty: obj.qty || 1, packed: 0 };
+        const built = { id: uid(), name: obj.name, qty: obj.qty || 1, packed: 0 };
+        if (obj.perDay) built.perDay = obj.perDay;
+        return built;
       }),
     }));
   }
@@ -84,6 +87,7 @@
                   result.suggested = true;
                   if (typeof it.reason === "string") result.reason = it.reason;
                 }
+                if (Number.isFinite(it.perDay) && it.perDay > 0) result.perDay = it.perDay;
                 return result;
               })
           : [];
@@ -304,6 +308,35 @@
 
   weatherBtn.addEventListener("click", fetchWeatherSuggestions);
 
+  // ---------- Duration-based quantities ----------
+  const durationInput = document.getElementById("durationInput");
+  const savedDuration = localStorage.getItem(DURATION_KEY);
+  if (savedDuration) durationInput.value = savedDuration;
+
+  function formatFactor(n) {
+    return Number.isInteger(n) ? String(n) : String(Math.round(n * 100) / 100);
+  }
+
+  function recalcDurationItems(days) {
+    state.forEach((cat) => {
+      cat.items.forEach((item) => {
+        if (Number.isFinite(item.perDay) && item.perDay > 0) {
+          item.qty = Math.max(1, Math.round(days * item.perDay));
+          item.packed = Math.min(item.packed, item.qty);
+        }
+      });
+    });
+    saveState();
+    render();
+  }
+
+  durationInput.addEventListener("change", () => {
+    const days = parseInt(durationInput.value, 10);
+    if (!Number.isFinite(days) || days < 1) return;
+    localStorage.setItem(DURATION_KEY, String(days));
+    recalcDurationItems(days);
+  });
+
   // ---------- Rendering ----------
   const categoriesEl = document.getElementById("categories");
   const categoryTemplate = document.getElementById("categoryTemplate");
@@ -414,6 +447,46 @@
           saveState();
           render();
           maybeCelebrate();
+        });
+
+        li.querySelector(".qty-display").addEventListener("click", () => {
+          const input = prompt(`Menge für "${item.name}" ändern (aktuell ${item.qty}):`, item.qty);
+          if (input === null) return;
+          const newQty = parseInt(input, 10);
+          if (!Number.isFinite(newQty) || newQty < 1) return;
+          item.qty = newQty;
+          item.packed = Math.min(item.packed, item.qty);
+          saveState();
+          render();
+        });
+
+        const perDayBtn = li.querySelector(".perday-toggle");
+        if (Number.isFinite(item.perDay) && item.perDay > 0) {
+          perDayBtn.textContent = `🔁 ${formatFactor(item.perDay)}×/Tag`;
+          perDayBtn.classList.add("perday-active");
+        } else {
+          perDayBtn.textContent = "+ /Tag";
+          perDayBtn.classList.remove("perday-active");
+        }
+        perDayBtn.addEventListener("click", () => {
+          const input = prompt(
+            `Wie viele "${item.name}" pro Reisetag einplanen? (z. B. 1, oder 0.5 für jeden 2. Tag)\nLeer lassen oder 0, um die automatische Berechnung zu deaktivieren.`,
+            item.perDay || ""
+          );
+          if (input === null) return;
+          const factor = parseFloat(input.replace(",", "."));
+          if (!input.trim() || !Number.isFinite(factor) || factor <= 0) {
+            delete item.perDay;
+          } else {
+            item.perDay = factor;
+            const days = parseInt(durationInput.value, 10);
+            if (Number.isFinite(days) && days >= 1) {
+              item.qty = Math.max(1, Math.round(days * factor));
+              item.packed = Math.min(item.packed, item.qty);
+            }
+          }
+          saveState();
+          render();
         });
 
         li.querySelector(".item-delete").addEventListener("click", () => {

@@ -1,9 +1,9 @@
-const CACHE_NAME = "packliste-cache-v4";
+const CACHE_NAME = "packliste-cache-v5";
 const ASSETS = [
   "./",
   "./index.html",
-  "./css/style.css?v=4",
-  "./js/app.js?v=4",
+  "./css/style.css?v=5",
+  "./js/app.js?v=5",
   "./manifest.json",
   "./icon.svg",
 ];

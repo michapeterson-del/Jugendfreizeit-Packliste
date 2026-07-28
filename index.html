@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icon.svg" />
-<link rel="stylesheet" href="css/style.css?v=4" />
+<link rel="stylesheet" href="css/style.css?v=5" />
 </head>
 <body>
 
@@ -29,6 +29,7 @@
   <div id="tripSetup" class="trip-setup">
     <div class="trip-setup-row">
       <input type="text" id="destinationInput" placeholder="🌍 Zielort (z. B. Berlin)" aria-label="Zielort" />
+      <input type="number" id="durationInput" min="1" max="60" placeholder="🗓️ Tage" aria-label="Reisedauer in Tagen" />
       <button id="weatherBtn" class="btn btn-ghost">🌦️ Wetter abrufen</button>
     </div>
     <div id="weatherResult" class="weather-result hidden"></div>
@@ -82,9 +83,10 @@
     </span>
     <div class="item-qty-controls">
       <button class="qty-btn qty-minus" aria-label="Weniger">−</button>
-      <span class="qty-display"></span>
+      <button type="button" class="qty-display" title="Menge ändern"></button>
       <button class="qty-btn qty-plus" aria-label="Mehr">+</button>
     </div>
+    <button class="perday-toggle" type="button" title="Menge automatisch nach Reisedauer berechnen"></button>
     <div class="item-suggested-actions">
       <button class="suggest-accept" type="button">✓ Übernehmen</button>
       <button class="suggest-decline" type="button">✕ Ablehnen</button>
@@ -119,6 +121,6 @@
   </section>
 </template>
 
-<script src="js/app.js?v=4"></script>
+<script src="js/app.js?v=5"></script>
 </body>
 </html>
