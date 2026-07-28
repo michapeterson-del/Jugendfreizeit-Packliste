@@ -527,16 +527,35 @@
       });
 
       const form = node.querySelector(".add-item-form");
+      const formQtyInput = form.querySelector(".add-item-qty");
+      const formPerDayCheckbox = form.querySelector(".add-item-perday-checkbox");
+      formPerDayCheckbox.addEventListener("change", () => {
+        formQtyInput.title = formPerDayCheckbox.checked ? "Menge pro Tag (z. B. 1 oder 0.5)" : "Menge";
+      });
+
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         const input = form.querySelector(".add-item-input");
         const qtyInput = form.querySelector(".add-item-qty");
+        const perDayCheckbox = form.querySelector(".add-item-perday-checkbox");
         const name = input.value.trim();
         if (!name) return;
-        const qty = Math.max(1, parseInt(qtyInput.value, 10) || 1);
-        cat.items.push({ id: uid(), name, qty, packed: 0 });
+
+        const rawValue = parseFloat(qtyInput.value.replace(",", ".")) || 1;
+
+        if (perDayCheckbox.checked) {
+          const factor = Math.max(0.1, rawValue);
+          const days = parseInt(durationInput.value, 10);
+          const qty = Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days * factor)) : Math.max(1, Math.round(factor));
+          cat.items.push({ id: uid(), name, qty, packed: 0, perDay: factor });
+        } else {
+          const qty = Math.max(1, Math.round(rawValue));
+          cat.items.push({ id: uid(), name, qty, packed: 0 });
+        }
+
         input.value = "";
         qtyInput.value = "1";
+        perDayCheckbox.checked = false;
         saveState();
         render();
       });

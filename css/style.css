@@ -594,6 +594,8 @@ body {
 
 .add-item-form {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 6px;
   margin-top: 10px;
   padding-top: 10px;
@@ -620,6 +622,18 @@ body {
   color: var(--text);
   font-size: 0.9rem;
 }
+
+.add-item-perday {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.add-item-perday input { cursor: pointer; }
 
 .empty-state {
   text-align: center;

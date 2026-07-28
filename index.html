@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icon.svg" />
-<link rel="stylesheet" href="css/style.css?v=6" />
+<link rel="stylesheet" href="css/style.css?v=7" />
 </head>
 <body>
 
@@ -115,12 +115,16 @@
     <ul class="item-list"></ul>
     <form class="add-item-form">
       <input type="text" class="add-item-input" placeholder="+ Sache hinzufügen…" required />
-      <input type="number" class="add-item-qty" min="1" max="99" value="1" title="Menge" />
+      <input type="number" class="add-item-qty" min="0.5" max="99" step="any" value="1" title="Menge" />
+      <label class="add-item-perday">
+        <input type="checkbox" class="add-item-perday-checkbox" />
+        <span>🔁 pro Tag</span>
+      </label>
       <button type="submit" class="btn btn-small">Hinzufügen</button>
     </form>
   </section>
 </template>
 
-<script src="js/app.js?v=6"></script>
+<script src="js/app.js?v=7"></script>
 </body>
 </html>
