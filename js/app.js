@@ -6,6 +6,7 @@
   const TRIP_DATE_KEY = "packliste-trip-date";
   const DESTINATION_KEY = "packliste-destination";
   const DURATION_KEY = "packliste-trip-days";
+  const GENDER_KEY = "packliste-gender";
 
   const DEFAULT_DATA = [
     {
@@ -327,6 +328,46 @@
     if (!Number.isFinite(days) || days < 1) return;
     localStorage.setItem(DURATION_KEY, String(days));
     recalcDurationItems(days);
+  });
+
+  // ---------- Gender-based clothing ----------
+  const genderInput = document.getElementById("genderInput");
+  const savedGender = localStorage.getItem(GENDER_KEY);
+  if (savedGender) genderInput.value = savedGender;
+
+  // Clothing only - no explicit hygiene/personal-care products.
+  const GENDER_ITEMS = {
+    weiblich: [{ name: "BH", category: "Kleidung", perDay: 1 }],
+  };
+
+  function applyGenderItems(gender) {
+    const list = GENDER_ITEMS[gender];
+    if (!list || !list.length) return;
+
+    list.forEach((def) => {
+      let cat = state.find((c) => c.name.toLowerCase() === def.category.toLowerCase());
+      if (!cat) {
+        cat = { id: uid(), name: def.category, emoji: "📦", items: [] };
+        state.push(cat);
+      }
+      if (cat.items.some((it) => it.name === def.name)) return;
+
+      const newItem = { id: uid(), name: def.name, qty: 1, packed: 0 };
+      if (def.perDay) {
+        const days = parseInt(durationInput.value, 10);
+        newItem.qty = Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days * def.perDay)) : 1;
+        newItem.perDay = def.perDay;
+      }
+      cat.items.push(newItem);
+    });
+
+    saveState();
+    render();
+  }
+
+  genderInput.addEventListener("change", () => {
+    localStorage.setItem(GENDER_KEY, genderInput.value);
+    applyGenderItems(genderInput.value);
   });
 
   // ---------- Rendering ----------

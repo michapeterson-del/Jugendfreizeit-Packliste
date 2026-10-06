@@ -9,7 +9,7 @@
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icon.svg" type="image/svg+xml" />
 <link rel="apple-touch-icon" href="icon.svg" />
-<link rel="stylesheet" href="css/style.css?v=8" />
+<link rel="stylesheet" href="css/style.css?v=9" />
 </head>
 <body>
 
@@ -30,6 +30,12 @@
     <div class="trip-setup-row">
       <input type="text" id="destinationInput" placeholder="🌍 Zielort (z. B. Berlin)" aria-label="Zielort" />
       <input type="number" id="durationInput" min="1" max="60" placeholder="🗓️ Tage" aria-label="Reisedauer in Tagen" />
+      <select id="genderInput" aria-label="Geschlecht">
+        <option value="">⚧ Geschlecht (optional)</option>
+        <option value="weiblich">Weiblich</option>
+        <option value="maennlich">Männlich</option>
+        <option value="divers">Divers / keine Angabe</option>
+      </select>
       <button id="weatherBtn" class="btn btn-ghost">🌦️ Wetter abrufen</button>
     </div>
     <div id="weatherResult" class="weather-result hidden"></div>
@@ -125,6 +131,6 @@
   </section>
 </template>
 
-<script src="js/app.js?v=8"></script>
+<script src="js/app.js?v=9"></script>
 </body>
 </html>
