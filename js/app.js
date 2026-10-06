@@ -337,7 +337,10 @@
 
   // Clothing only - no explicit hygiene/personal-care products.
   const GENDER_ITEMS = {
-    weiblich: [{ name: "BH", category: "Kleidung", perDay: 1 }],
+    weiblich: [
+      { name: "Kleider", category: "Kleidung", qty: 2 },
+      { name: "Röcke", category: "Kleidung", qty: 2 },
+    ],
   };
 
   function applyGenderItems(gender) {
@@ -352,7 +355,7 @@
       }
       if (cat.items.some((it) => it.name === def.name)) return;
 
-      const newItem = { id: uid(), name: def.name, qty: 1, packed: 0 };
+      const newItem = { id: uid(), name: def.name, qty: def.qty || 1, packed: 0 };
       if (def.perDay) {
         const days = parseInt(durationInput.value, 10);
         newItem.qty = Number.isFinite(days) && days >= 1 ? Math.max(1, Math.round(days * def.perDay)) : 1;
